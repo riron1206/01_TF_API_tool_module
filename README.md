@@ -21,8 +21,12 @@ conda install -c conda-forge numba=0.38.1  opencv
 ```
 
 ## Usage
+- tf_api_tool_moduleは学習で使うpythonスクリプト郡
+- tf_api_train_base_filesはtf_api_tool_moduleで必要なファイル作成するbatやnotebook
+- modelsは2018/05/19時点のtensorflow object detection API(https://github.com/tensorflow/models/tree/master/research)
+
 - tf_api_train_base_files/00_sed_cp_base_files.batに出力ディレクトリとtrain画像ディレクトリのパスを入れて00から順番にbat実行すれば学習実行できる
-- ファイルはサクラエディタで開くこと。batファイルの文字コードがUTF8でないとtf_api_train_base_files/00_sed_cp_base_files.batエラーになる
+	- ファイルはサクラエディタで開くこと。batファイルの文字コードがUTF8でないとtf_api_train_base_files/00_sed_cp_base_files.batエラーになる
 
 ## Author
 - Github: [riron1206](https://github.com/riron1206)
