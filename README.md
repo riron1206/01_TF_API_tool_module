@@ -21,9 +21,9 @@ conda install -c conda-forge numba=0.38.1  opencv
 ```
 
 ## Usage
-00_sed_cp_base_files.batに出力ディレクトリとtrain画像ディレクトリのパスを入れて00から順番にbat実行すれば学習実行できる
-00_sed_cp_base_files.batだけコピーし、実行すれば01-のnotebookとbatのコピーがカレントディレクトリに作られる
-ファイルはサクラエディタで開くこと。batファイルの文字コードがUTF8でないと00_sed_cp_base_files.batエラーになる
+- 00_sed_cp_base_files.batに出力ディレクトリとtrain画像ディレクトリのパスを入れて00から順番にbat実行すれば学習実行できる
+- 00_sed_cp_base_files.batだけコピーし、実行すれば01-のnotebookとbatのコピーがカレントディレクトリに作られる
+- ファイルはサクラエディタで開くこと。batファイルの文字コードがUTF8でないと00_sed_cp_base_files.batエラーになる
 
 ## Author
 - Github: [riron1206](https://github.com/riron1206)
