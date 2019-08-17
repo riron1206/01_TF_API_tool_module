@@ -1,5 +1,5 @@
 # 01_TF_API_tool_module
-tensorflow object detection API(faster_rcnn_inception_resnet_v2)をwindows環境でなるだけ簡単に動かすためのツール群
+tensorflow object detection API ( faster_rcnn_inception_resnet_v2 ) をwindows環境でなるだけ簡単に動かすためのツール群
 
 ## Setup
 - Anaconda 4.4.10: https://www.anaconda.com/distribution/
