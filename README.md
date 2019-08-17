@@ -1,5 +1,5 @@
 # 01_TF_API_tool_module
-tensorflow object detection APIをwindows環境でなるだけ簡単に動かすためのツール群 for Windows(GeForce 1080)  
+tensorflow object detection APIをwindows環境でなるだけ簡単に動かすためのツール群
 
 ## Setup
 - Anaconda 4.4.10: https://www.anaconda.com/distribution/
