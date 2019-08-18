@@ -205,16 +205,18 @@ def predict_image_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE, NUM_CLASSES
         classes = np.array([int(c) for c in classes_class_id_model]) # intでないと vis_util.visualize_boxes_and_labels_on_image_array()でエラーになる
         classes_class_name_model = np.array(classes_class_name_model)
         scores = np.array(scores_class_model)
-        # 元の方である4次元テンソルへ変換
+        # 元の型である4次元テンソルへ変換
         boxes = np.expand_dims(boxes, axis=0)
         classes = np.expand_dims(classes, axis=0)
         classes_class_name_model = np.expand_dims(classes_class_name_model, axis=0)
         scores = np.expand_dims(scores, axis=0)
+        print('boxes.shape:', boxes.shape)
+        #print(boxes)
         #print(type(classes))
-        #print(classes.shape)
+        print('classes.shape:', classes.shape)
         #print(classes)
         #print(type(scores))
-        #print(scores.shape)
+        print('scores.shape:', scores.shape)
         #print(scores)
     # ---------------------------------------------------------
 
@@ -276,59 +278,65 @@ def predict_dir_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE_DIR, NUM_CLASS
     pbar = tqdm(img_path_list, file=sys.stdout)
     for path in pbar:
         pbar.set_description("%s" % os.path.basename(path)) # tqdmの進捗バー
-        # 出力先に同名ファイルあればpredictしない
-        if is_overwrite == False and os.path.isfile(os.path.join(output_dir, os.path.basename(path))):
+        # 予測領域1件だけの場合何故かエラーになるからtryで囲む
+        try:
+            # 出力先に同名ファイルあればpredictしない
+            if is_overwrite == False and os.path.isfile(os.path.join(output_dir, os.path.basename(path))):
+                continue
+            # ---- json用 ----
+            #img_name = os.path.basename(path)
+            #prediction[img_name] = {}
+            # ----------------
+            # 画像1件predict
+            boxes, scores, classes, img_RGB = predict_image_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, path, NUM_CLASSES, output_dir,
+                                                                                            tfapi_min_score_thresh=tfapi_min_score_thresh, # tfAPIのpredictの閾値
+                                                                                            is_show=is_show, is_img_save=is_img_save,
+                                                                                            class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width)
+            ymin_list = []
+            xmin_list = []
+            ymax_list = []
+            xmax_list = []
+            im_height = img_RGB.shape[0]
+            im_width = img_RGB.shape[1]
+            boxes = np.squeeze(boxes) # np.squeeze: サイズ1の次元の削除（4次元テンソルなので3次元にする）
+            scores = np.squeeze(scores)
+            classes = np.squeeze(classes)
+            # ---- JTコンペ json用 ----
+            #score_check = {}
+            # ----------------
+            for box, score, cla in zip(boxes, scores, classes):
+                ymin, xmin, ymax, xmax = box
+                ymin_list.append(int(im_height*ymin))
+                xmin_list.append(int(im_width*xmin))
+                ymax_list.append(int(im_height*ymax))
+                xmax_list.append(int(im_width*xmax))
+                # -------------------------- json用 --------------------------
+                #if cla not in score_check:
+                #    score_check[cla] = score
+                #if cla not in prediction[img_name]:
+                #    prediction[img_name][cla]=[]
+                #    # JTコンペ用 画像1枚に同じクラス複数無いはずなので同じクラスの結果は追加させない+スコアが一番高いのを採用
+                #    if score_check[cla] <= score:
+                #        prediction[img_name][cla].append([xmin_list[-1], ymin_list[-1], xmax_list[-1], ymax_list[-1]])
+                #        #print(prediction)
+                # 画像1枚に同じクラス複数ある場合はこっち
+                # prediction[img_name][cla].append([xmin_list[-1], ymin_list[-1], xmax_list[-1], ymax_list[-1]])
+                # ------------------------------------------------------------
+            # 予測結果データフレーム
+            df_output_dict = pd.DataFrame({'image_path': [path]*len(boxes),
+                                            'ymin': ymin_list,
+                                            'xmin': xmin_list,
+                                            'ymax': ymax_list,
+                                            'xmax': xmax_list,
+                                            'detection_scores': list(scores),
+                                            'detection_classes': list(classes)})
+            df_output_dict_merge = pd.concat([df_output_dict_merge, df_output_dict])
+            #print(df_output_dict_merge)
+            #break # 1件だけ確認用
+        except Exception as e:
+            print('#### predict Exception. img path:', path, '#####')
+            print(e)
             continue
-        # ---- json用 ----
-        #img_name = os.path.basename(path)
-        #prediction[img_name] = {}
-        # ----------------
-        # 画像1件predict
-        boxes, scores, classes, img_RGB = predict_image_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, path, NUM_CLASSES, output_dir,
-                                                                                        tfapi_min_score_thresh=tfapi_min_score_thresh, # tfAPIのpredictの閾値
-                                                                                        is_show=is_show, is_img_save=is_img_save,
-                                                                                        class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width)
-        ymin_list = []
-        xmin_list = []
-        ymax_list = []
-        xmax_list = []
-        im_height = img_RGB.shape[0]
-        im_width = img_RGB.shape[1]
-        boxes = np.squeeze(boxes) # np.squeeze: サイズ1の次元の削除（4次元テンソルなので3次元にする）
-        scores = np.squeeze(scores)
-        classes = np.squeeze(classes)
-        # ---- JTコンペ json用 ----
-        #score_check = {}
-        # ----------------
-        for box, score, cla in zip(boxes, scores, classes):
-            ymin, xmin, ymax, xmax = box
-            ymin_list.append(int(im_height*ymin))
-            xmin_list.append(int(im_width*xmin))
-            ymax_list.append(int(im_height*ymax))
-            xmax_list.append(int(im_width*xmax))
-            # -------------------------- json用 --------------------------
-            #if cla not in score_check:
-            #    score_check[cla] = score
-            #if cla not in prediction[img_name]:
-            #    prediction[img_name][cla]=[]
-            #    # JTコンペ用 画像1枚に同じクラス複数無いはずなので同じクラスの結果は追加させない+スコアが一番高いのを採用
-            #    if score_check[cla] <= score:
-            #        prediction[img_name][cla].append([xmin_list[-1], ymin_list[-1], xmax_list[-1], ymax_list[-1]])
-            #        #print(prediction)
-            # 画像1枚に同じクラス複数ある場合はこっち
-            # prediction[img_name][cla].append([xmin_list[-1], ymin_list[-1], xmax_list[-1], ymax_list[-1]])
-            # ------------------------------------------------------------
-        # 予測結果データフレーム
-        df_output_dict = pd.DataFrame({'image_path': [path]*len(boxes),
-                                        'ymin': ymin_list,
-                                        'xmin': xmin_list,
-                                        'ymax': ymax_list,
-                                        'xmax': xmax_list,
-                                        'detection_scores': list(scores),
-                                        'detection_classes': list(classes)})
-        df_output_dict_merge = pd.concat([df_output_dict_merge, df_output_dict])
-        #print(df_output_dict_merge)
-        #break # 1件だけ確認用
 
     # 位置情報無いレコードは除く
     df_output_dict_merge = df_output_dict_merge[ (df_output_dict_merge['ymin']!=0.0) & (df_output_dict_merge['xmin']!=0.0) & (df_output_dict_merge['ymax']!=0.0) & (df_output_dict_merge['xmax']!=0.0) ]
