@@ -48,6 +48,18 @@ def main():
         help="workdir\05_deploy_trained_model.bat")
     ap.add_argument("-06_bat", "--06_predict_1img_test", type=str, default="06_predict_1img_test.bat",
         help="workdir\06_predict_1img_test.bat")
+    ap.add_argument("-07_bat", "--07_predict_keras", type=str, default="07_predict_keras.bat",
+        help="workdir\07_predict_kerasbat")
+    ap.add_argument("-K", "--PATH_KERAS_MODEL", type=str, default="D:\work\kaggle_kuzushiji-recognition\work\classes\20190816\best_val_acc.h5",
+        help="workdir\PATH_KERAS_MODEL")
+    ap.add_argument("-K_H", "--KERAS_MODEL_HEIGHT", type=int, default=32,
+        help="kerasの画像分類モデルの入力層の大きさ")
+    ap.add_argument("-K_W", "--KERAS_MODEL_WIDTH", type=int, default=32,
+        help="kerasの画像分類モデルの入力層の大きさ")
+    ap.add_argument("-K_CLA", "--PATH_KERAS_DICT_CLASS_TSV", type=str, default="D:\work\kaggle_kuzushiji-recognition\work\classes\20190816\tfAPI_dict_class.tsv",
+        help="kerasの画像分類モデルのクラス名とクラスidのtsvファイル")
+    ap.add_argument("-K_CUS", "--KERAS_CUSTOM_OBJECTS", type=str, default="None",
+        help="kerasの画像分類モデルロード時に必要なcustom_objects。OctConv2Dとか。デフォルトのNoneならなしにする")
     args = vars(ap.parse_args())
 
     # 01_Object-Detection-API.ipynb コピーして置換
@@ -55,20 +67,14 @@ def main():
         , 'PATH_TO_BE_CONFIGURED'
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['notebook'])
-    sed(args['notebook']
-        , 'IMAGE_DIR'
-        , args['IMAGE_DIR']
-        , out_path=args['notebook'])
+    sed(args['notebook'], 'IMAGE_DIR', args['IMAGE_DIR'], out_path=args['notebook'])
 
     # 02_make_tf_file.bat コピーして置換
     sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\02_make_tf_file.bat'
         , 'PATH_TO_BE_CONFIGURED'
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['02_make_tf_file'])
-    sed(args['02_make_tf_file']
-        , 'IMAGE_DIR'
-        , args['IMAGE_DIR']
-        , out_path=args['02_make_tf_file'])
+    sed(args['02_make_tf_file'], 'IMAGE_DIR', args['IMAGE_DIR'], out_path=args['02_make_tf_file'])
 
     # 03_sed_config_file.bat コピーして置換
     sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\03_sed_config_file.bat'
@@ -99,6 +105,17 @@ def main():
         , 'PATH_TO_BE_CONFIGURED'
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['06_predict_1img_test'])
+
+    # 07_predict_keras.bat コピーして置換
+    sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\07_predict_keras.bat'
+        , 'PATH_TO_BE_CONFIGURED'
+        , args['PATH_TO_BE_CONFIGURED']
+        , out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'PATH_KERAS_MODEL', args['PATH_KERAS_MODEL'], out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'KERAS_MODEL_HEIGHT', args['KERAS_MODEL_HEIGHT'], out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'KERAS_MODEL_WIDTH', args['KERAS_MODEL_WIDTH'], out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'PATH_KERAS_DICT_CLASS_TSV', args['PATH_KERAS_DICT_CLASS_TSV'], out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'KERAS_CUSTOM_OBJECTS', args['KERAS_CUSTOM_OBJECTS'], out_path=args['07_predict_keras'])
 
 if __name__ == "__main__":
     main()

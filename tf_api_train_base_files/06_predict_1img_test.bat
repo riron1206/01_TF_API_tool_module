@@ -8,7 +8,7 @@ call python C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_mod
 --PATH_TO_LABELS PATH_TO_BE_CONFIGURED/label_map.pbtxt ^
 --PATH_TO_IMAGE D:\work\kaggle_kuzushiji-recognition\OrigData\kuzushiji-recognition\test_images\test_0adbe8a5.jpg ^
 --NUM_CLASSES 1 ^
---output predict_test ^
+--output PATH_TO_BE_CONFIGURED/predict_test ^
 --threshold 0.0
 
 pause

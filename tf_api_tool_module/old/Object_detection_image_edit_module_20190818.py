@@ -87,11 +87,10 @@ def make_category_index_from_dict_class(dict_class):
         category_index.update(d)
     return category_index
 
-def predict_image_tfapi(detection_graph, sess
-                        , PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE, NUM_CLASSES, output_dir
-                        , tfapi_min_score_thresh=1e-5
-                        , is_show=True, is_img_save=True
-                        , class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
+def predict_image_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE, NUM_CLASSES, output_dir,
+                        tfapi_min_score_thresh=1e-5,
+                        is_show=True, is_img_save=True,
+                        class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
     """
     tfAPIでpredict
     kerasの分類モデル引数にあればそのモデルでもpredict
@@ -116,6 +115,17 @@ def predict_image_tfapi(detection_graph, sess
     #print(categories)
     category_index = label_map_util.create_category_index(categories)
     #print(category_index)
+
+    # Load the Tensorflow model into memory.
+    detection_graph = tf.Graph()
+    with detection_graph.as_default():
+        od_graph_def = tf.GraphDef()
+        with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+            serialized_graph = fid.read()
+            od_graph_def.ParseFromString(serialized_graph)
+            tf.import_graph_def(od_graph_def, name='')
+
+        sess = tf.Session(graph=detection_graph)
 
     # Define input and output tensors (i.e. data) for the object detection classifier
     # Input tensor is the image
@@ -210,45 +220,30 @@ def predict_image_tfapi(detection_graph, sess
         #print(scores)
     # ---------------------------------------------------------
 
-    # 検出数が1のときに検出画像をだすとエラーになるのでtryで囲む
-    try:
-        # 検出画像保存するか
-        if is_img_save == True:
-            print("Draw the results of the detection......")
-            if boxes.shape == (1, 1, 4):
-                vis_boxes = boxes.reshape(1, 4) # 検出数が1つだけのときnp.squeezeするとclassesのshape=()となりエラーになるためreshapeでサイズ固定する
-                vis_classes = classes.reshape(1,)
-                vis_scores = scores.reshape(1,)
-            else:
-                vis_boxes = np.squeeze(boxes) # np.squeeze: サイズ1の次元の削除
-                vis_classes = np.squeeze(classes)
-                vis_scores = np.squeeze(scores)
-            #print(vis_boxes.shape)
-            #print(vis_classes.shape)
-            #print(vis_scores.shape)
-            # Draw the results of the detection (aka 'visulaize the results')
-            vis_util.visualize_boxes_and_labels_on_image_array(
-                image,
-                vis_boxes,
-                vis_classes,
-                vis_scores,
-                category_index,
-                use_normalized_coordinates=True,
-                line_thickness=8,
-                max_boxes_to_draw=int(num[0]), # 描画するbboxの最大数
-                min_score_thresh=tfapi_min_score_thresh # 領域予測の閾値
-            )
-            img_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            PIL.Image.fromarray(img_RGB).save(os.path.join(output_dir, str(Path(PATH_TO_IMAGE).stem)+'.jpg')) # ファイル出力
+    # Draw the results of the detection (aka 'visulaize the results')
+    vis_util.visualize_boxes_and_labels_on_image_array(
+        image,
+        np.squeeze(boxes), # np.squeeze: サイズ1の次元の削除
+        np.squeeze(classes),
+        np.squeeze(scores),
+        category_index,
+        use_normalized_coordinates=True,
+        line_thickness=8,
+        max_boxes_to_draw=int(num[0]), # 描画するbboxの最大数
+        min_score_thresh=tfapi_min_score_thresh # 領域予測の閾値
+    )
 
-            # 検出画像表示するか
-            if is_show == True:
-                plt.figure(figsize=(4, 4), dpi = 200)
-                plt.imshow(image)
-                plt.show()
-    except Exception as e:
-        print('#### visualize_boxes Exception. img path:', PATH_TO_IMAGE, '#####')
-        print(e)
+    img_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # 検出画像保存するか
+    if is_img_save == True:
+        PIL.Image.fromarray(img_RGB).save(os.path.join(output_dir, str(Path(PATH_TO_IMAGE).stem)+'.jpg')) # ファイル出力
+
+    # 検出画像表示するか
+    if is_show == True:
+        plt.figure(figsize=(4, 4), dpi = 200)
+        plt.imshow(image)
+        plt.show()
 
     # ローカル変数の存在をチェック
     if 'classes_class_name_model' in locals():
@@ -260,12 +255,11 @@ def predict_image_tfapi(detection_graph, sess
 
 
 
-def predict_dir_tfapi(detection_graph, sess,
-                      PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE_DIR, NUM_CLASSES, output_dir,
-                      tfapi_min_score_thresh=1e-5,
-                      is_show=True, is_img_save=True,
-                      is_overwrite=False,
-                      class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
+def predict_dir_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE_DIR, NUM_CLASSES, output_dir,
+                        tfapi_min_score_thresh=1e-5,
+                        is_show=True, is_img_save=True,
+                        is_overwrite=False,
+                        class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
     """
     指定ディレクトリの画像全件tfAPIでpredict
     kerasの分類モデル引数にあればそのモデルでもpredict
@@ -294,11 +288,10 @@ def predict_dir_tfapi(detection_graph, sess,
             #prediction[img_name] = {}
             # ----------------
             # 画像1件predict
-            boxes, scores, classes, img_RGB = predict_image_tfapi(detection_graph, sess
-                                                                  , PATH_TO_CKPT, PATH_TO_LABELS, path, NUM_CLASSES, output_dir
-                                                                  , tfapi_min_score_thresh=tfapi_min_score_thresh # tfAPIのpredictの閾値
-                                                                  , is_show=is_show, is_img_save=is_img_save
-                                                                  , class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width)
+            boxes, scores, classes, img_RGB = predict_image_tfapi(PATH_TO_CKPT, PATH_TO_LABELS, path, NUM_CLASSES, output_dir,
+                                                                                            tfapi_min_score_thresh=tfapi_min_score_thresh, # tfAPIのpredictの閾値
+                                                                                            is_show=is_show, is_img_save=is_img_save,
+                                                                                            class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width)
             ymin_list = []
             xmin_list = []
             ymax_list = []
@@ -371,7 +364,7 @@ def out_pred_df_mid_posi(df_output_dict_merge, output_dir):
 
     # image_id一意にする
     image_id = sorted(set(image_id), key=image_id.index)
-    #print(image_id)
+    print(image_id)
 
     # 画像id, ラベル1 x_mid1 y mid1 ラベル2 x_mid2 y mid2 … の形式に変形する
     labels_join = []
@@ -394,11 +387,11 @@ def main():
         help="path to image dir")
     ap.add_argument("-n", "--NUM_CLASSES", type=int, default=1,
         help="number of classes")
-    ap.add_argument("-is_s", "--is_show", action='store_const', const=True, default=False,
+    ap.add_argument("-is_s", "--is_show", type=bool, default=False,
         help="show image")
-    ap.add_argument("-is_i", "--is_img_save", action='store_const', const=True, default=False,
+    ap.add_argument("-is_i", "--is_img_save", type=bool, default=True,
         help="save image")
-    ap.add_argument("-is_o", "--is_overwrite", action='store_const', const=True, default=False,
+    ap.add_argument("-is_o", "--is_overwrite", type=bool, default=False,
         help="出力先に同名ファイルあればpredictしない")
     ap.add_argument("-o", "--output", type=str, required=True,
         help="path to output directory of detected video file")
@@ -418,7 +411,7 @@ def main():
         help="kerasの分類モデルの入力層の横サイズ")
     args = vars(ap.parse_args())
 
-    print('custom_objects:', args["custom_objects"])
+    print(args["custom_objects"])
     # keras model load
     if args["class_model_path"] == "None":
         class_model = None
@@ -440,27 +433,15 @@ def main():
         dict_class[series[1]] = series[0]
     #print('dict_class:', dict_class)
 
-    # Load the Tensorflow model into memory.
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.GraphDef()
-        with tf.gfile.GFile(args["PATH_TO_CKPT"], 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
-
-        sess = tf.Session(graph=detection_graph)
-
     # 指定ディレクトリの画像全件tfAPI+kerasの分類モデルでpredict
-    df_output_dict_merge = predict_dir_tfapi(detection_graph, sess
-                                             , args["PATH_TO_CKPT"], args["PATH_TO_LABELS"], args["PATH_TO_IMAGE"], args["NUM_CLASSES"], args["output"]
-                                             , tfapi_min_score_thresh=args["tfapi_threshold"]
-                                             , is_show=args["is_show"], is_img_save=args["is_img_save"]
-                                             , is_overwrite=args["is_overwrite"]
-                                             , class_model=class_model
-                                             , dict_class=dict_class
-                                             , class_min_score_thresh=args["class_threshold"]
-                                             , model_height=args["model_height"], model_width=args["model_width"])
+    df_output_dict_merge = predict_dir_tfapi(args["PATH_TO_CKPT"], args["PATH_TO_LABELS"], args["PATH_TO_IMAGE"], args["NUM_CLASSES"], args["output"]
+                                              , tfapi_min_score_thresh=args["tfapi_threshold"]
+                                              , is_show=args["is_show"], is_img_save=args["is_img_save"]
+                                              , is_overwrite=args["is_overwrite"]
+                                              , class_model=class_model
+                                              , dict_class=dict_class
+                                              , class_min_score_thresh=args["class_threshold"]
+                                              , model_height=args["model_height"], model_width=args["model_width"])
 
     # kaggleのくずし字コンペ用 予測したx,yの位置情報をx1,x2,y1,y2の中心位置にしたデータフレーム出力
     out_pred_df_mid_posi(df_output_dict_merge, args["output"])

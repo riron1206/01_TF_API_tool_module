@@ -78,7 +78,7 @@ ap.add_argument("-i", "--PATH_TO_IMAGE", type=str, required=True,
     help="path to image file")
 ap.add_argument("-n", "--NUM_CLASSES", type=int, default=1,
     help="number of classes")
-ap.add_argument("-s", "--is_show", type=bool, default=False,
+ap.add_argument("-s", "--is_show", action='store_const', const=True, default=False,
     help="show image")
 ap.add_argument("-o", "--output", type=str, required=True,
     help="path to output directory of detected video file")
@@ -160,6 +160,9 @@ df_pred = pd.DataFrame({'ymin':ymin.astype('int64')
 df_pred.to_csv(os.path.join(output_dir, str(Path(PATH_TO_IMAGE).stem)+'.tsv'), sep='\t')
 #print(boxes, scores, classes, num)
 
+print('boxes.shape:', boxes.shape)
+print('classes.shape:', classes.shape)
+print('scores.shape:', scores.shape)
 # Draw the results of the detection (aka 'visulaize the results')
 
 vis_util.visualize_boxes_and_labels_on_image_array(
