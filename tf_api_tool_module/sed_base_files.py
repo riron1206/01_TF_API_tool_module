@@ -3,6 +3,8 @@ tfAPIの基本ファイル(02_make_tf_file.batとか)のファイルパスを置
 """
 import os, sys
 import argparse
+import glob
+import pathlib
 
 def sed(file_path, before_str, after_str, out_path=None):
     """
@@ -50,16 +52,18 @@ def main():
         help="workdir\06_predict_1img_test.bat")
     ap.add_argument("-07_bat", "--07_predict_keras", type=str, default="07_predict_keras.bat",
         help="workdir\07_predict_kerasbat")
-    ap.add_argument("-K", "--PATH_KERAS_MODEL", type=str, default="D:\work\kaggle_kuzushiji-recognition\work\classes\20190816\best_val_acc.h5",
-        help="workdir\PATH_KERAS_MODEL")
+    ap.add_argument("-K", "--PATH_KERAS_MODEL", type=str, default="D:/work/kaggle_kuzushiji-recognition/work/classes/20190816/best_val_acc.h5",
+        help="予測で使うkerasの画像分類モデルのパス")
     ap.add_argument("-K_H", "--KERAS_MODEL_HEIGHT", type=int, default=32,
-        help="kerasの画像分類モデルの入力層の大きさ")
+        help="予測で使うkerasの画像分類モデルの入力層の大きさ")
     ap.add_argument("-K_W", "--KERAS_MODEL_WIDTH", type=int, default=32,
-        help="kerasの画像分類モデルの入力層の大きさ")
-    ap.add_argument("-K_CLA", "--PATH_KERAS_DICT_CLASS_TSV", type=str, default="D:\work\kaggle_kuzushiji-recognition\work\classes\20190816\tfAPI_dict_class.tsv",
-        help="kerasの画像分類モデルのクラス名とクラスidのtsvファイル")
+        help="予測で使うkerasの画像分類モデルの入力層の大きさ")
+    ap.add_argument("-K_CLA", "--PATH_KERAS_DICT_CLASS_TSV", type=str, default="D:/work/kaggle_kuzushiji-recognition/work/classes/20190816/tfAPI_dict_class.tsv",
+        help="予測で使うkerasの画像分類モデルのクラス名とクラスidのtsvファイル")
     ap.add_argument("-K_CUS", "--KERAS_CUSTOM_OBJECTS", type=str, default="None",
-        help="kerasの画像分類モデルロード時に必要なcustom_objects。OctConv2Dとか。デフォルトのNoneならなしにする")
+        help="予測で使うkerasの画像分類モデルロード時に必要なcustom_objects。OctConv2Dとか。デフォルトのNoneならなしにする")
+    ap.add_argument("-P_I_D", "--PRED_IMG_DIR", type=str, default="D:/work/kaggle_kuzushiji-recognition/GrayImg/test_images",
+        help="予測する画像ディレクトリ")
     args = vars(ap.parse_args())
 
     # 01_Object-Detection-API.ipynb コピーして置換
@@ -100,20 +104,28 @@ def main():
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['05_deploy_trained_model'])
 
+    # 予測用画像path1件取得
+    jpg_list = glob.glob( args['PRED_IMG_DIR']+'/*jpg' )
+    png_list = glob.glob( args['PRED_IMG_DIR']+'/*png' )
+    img_list = [*jpg_list, *png_list]
+    PRED_IMG_PATH = args['PRED_IMG_DIR']+'/'+str(pathlib.Path(img_list[0]).name)
+    #print(PRED_IMG_PATH)
     # 06_predict_1img_test.bat コピーして置換
     sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\06_predict_1img_test.bat'
         , 'PATH_TO_BE_CONFIGURED'
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['06_predict_1img_test'])
+    sed(args['06_predict_1img_test'], 'PRED_IMG_PATH', PRED_IMG_PATH, out_path=args['06_predict_1img_test'])
 
     # 07_predict_keras.bat コピーして置換
     sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\07_predict_keras.bat'
         , 'PATH_TO_BE_CONFIGURED'
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'PRED_IMG_DIR', args['PRED_IMG_DIR'], out_path=args['07_predict_keras'])
     sed(args['07_predict_keras'], 'PATH_KERAS_MODEL', args['PATH_KERAS_MODEL'], out_path=args['07_predict_keras'])
-    sed(args['07_predict_keras'], 'KERAS_MODEL_HEIGHT', args['KERAS_MODEL_HEIGHT'], out_path=args['07_predict_keras'])
-    sed(args['07_predict_keras'], 'KERAS_MODEL_WIDTH', args['KERAS_MODEL_WIDTH'], out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'KERAS_MODEL_HEIGHT', str(args['KERAS_MODEL_HEIGHT']), out_path=args['07_predict_keras'])
+    sed(args['07_predict_keras'], 'KERAS_MODEL_WIDTH', str(args['KERAS_MODEL_WIDTH']), out_path=args['07_predict_keras'])
     sed(args['07_predict_keras'], 'PATH_KERAS_DICT_CLASS_TSV', args['PATH_KERAS_DICT_CLASS_TSV'], out_path=args['07_predict_keras'])
     sed(args['07_predict_keras'], 'KERAS_CUSTOM_OBJECTS', args['KERAS_CUSTOM_OBJECTS'], out_path=args['07_predict_keras'])
 

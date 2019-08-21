@@ -6,7 +6,7 @@ call activate tfgpu_v1-11
 call python C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_tool_module\\Object_detection_image_edit.py ^
 --PATH_TO_CKPT PATH_TO_BE_CONFIGURED/inference_graph/frozen_inference_graph.pb ^
 --PATH_TO_LABELS PATH_TO_BE_CONFIGURED/label_map.pbtxt ^
---PATH_TO_IMAGE D:\work\kaggle_kuzushiji-recognition\OrigData\kuzushiji-recognition\test_images\test_0adbe8a5.jpg ^
+--PATH_TO_IMAGE PRED_IMG_PATH ^
 --NUM_CLASSES 1 ^
 --output PATH_TO_BE_CONFIGURED/predict_test ^
 --threshold 0.0

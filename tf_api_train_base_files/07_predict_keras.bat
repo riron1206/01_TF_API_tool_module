@@ -8,13 +8,13 @@ call activate tfgpu_v1-11
 call python C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_tool_module\\Object_detection_image_edit_module.py ^
 --PATH_TO_CKPT PATH_TO_BE_CONFIGURED/inference_graph/frozen_inference_graph.pb ^
 --PATH_TO_LABELS PATH_TO_BE_CONFIGURED/label_map.pbtxt ^
---PATH_TO_IMAGE D:\work\kaggle_kuzushiji-recognition\OrigData\kuzushiji-recognition\test_images\test_0adbe8a5.jpg ^
+--PATH_TO_IMAGE PRED_IMG_DIR ^
 --NUM_CLASSES 1 ^
 --output PATH_TO_BE_CONFIGURED/predict_keras_all ^
 --is_overwrite True ^
---tfapi_threshold 0.6 ^
+--tfapi_threshold 0.1 ^
 --class_model_path PATH_KERAS_MODEL ^
---class_threshold 0.0001 ^
+--class_threshold 0.1 ^
 --model_height KERAS_MODEL_HEIGHT ^
 --model_width KERAS_MODEL_WIDTH ^
 --dict_class_tsv PATH_KERAS_DICT_CLASS_TSV ^

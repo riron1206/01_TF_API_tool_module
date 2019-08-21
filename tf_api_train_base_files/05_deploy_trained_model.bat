@@ -1,4 +1,5 @@
-@rem 作成日2019/8/16 predict用に学習したモデルをinference_graphディレクトリにデプロイ。学習したモデルのstep番号(model.ckpt-196725)は手で修正すること
+@rem 作成日2019/8/16 predict用に学習したモデルをinference_graphディレクトリにデプロイ
+@rem 学習したモデルのstep番号(model.ckpt-196725)は手で修正すること
 
 call activate tfgpu_v1-11
 call python C:\\Users\\shingo\\Git\\models\\research\\object_detection\\export_inference_graph.py ^
