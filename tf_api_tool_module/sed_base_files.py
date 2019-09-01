@@ -50,6 +50,8 @@ def main():
         help="workdir\05_deploy_trained_model.bat")
     ap.add_argument("-06_bat", "--06_predict_1img_test", type=str, default="06_predict_1img_test.bat",
         help="workdir\06_predict_1img_test.bat")
+    ap.add_argument("-06_video_bat", "--06_predict_1video_test", type=str, default="06_predict_1video_test.bat",
+        help="workdir\06_predict_1video_test.bat")
     ap.add_argument("-07_bat", "--07_predict_keras", type=str, default="07_predict_keras.bat",
         help="workdir\07_predict_kerasbat")
     ap.add_argument("-K", "--PATH_KERAS_MODEL", type=str, default="D:/work/kaggle_kuzushiji-recognition/work/classes/20190816/best_val_acc.h5",
@@ -116,6 +118,18 @@ def main():
         , args['PATH_TO_BE_CONFIGURED']
         , out_path=args['06_predict_1img_test'])
     sed(args['06_predict_1img_test'], 'PRED_IMG_PATH', PRED_IMG_PATH, out_path=args['06_predict_1img_test'])
+
+    # 予測用動画path1件取得
+    avi_list = glob.glob( args['PRED_IMG_DIR']+'/*avi' )
+    mp4_list = glob.glob( args['PRED_IMG_DIR']+'/*mp4' )
+    video_list = [*avi_list, *mp4_list]
+    PRED_VIDEO_PATH = args['PRED_IMG_DIR']+'/'+str(pathlib.Path(img_list[0]).name)
+    # 06_predict_1video_test.bat コピーして置換
+    sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\06_predict_1video_test.bat'
+        , 'PATH_TO_BE_CONFIGURED'
+        , args['PATH_TO_BE_CONFIGURED']
+        , out_path=args['06_predict_1video_test'])
+    sed(args['06_predict_1video_test'], 'PRED_VIDEO_PATH', PRED_VIDEO_PATH, out_path=args['06_predict_1video_test'])
 
     # 07_predict_keras.bat コピーして置換
     sed(r'C:\Users\shingo\jupyter_notebook\tfgpu_v1-11_work\01_TF_API_tool_module\tf_api_train_base_files\07_predict_keras.bat'

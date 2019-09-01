@@ -81,6 +81,8 @@ ap.add_argument("-n", "--NUM_CLASSES", type=int, default=6,
     help="number of classes")
 ap.add_argument("-o", "--output", type=str, required=True,
     help="path to output directory of detected video file")
+ap.add_argument("-t", "--threshold", type=float, default=0.8,
+    help="predict score threshold")
 args = vars(ap.parse_args())
 
 PATH_TO_CKPT = args["PATH_TO_CKPT"]
@@ -161,7 +163,7 @@ while(video.isOpened()):
         category_index,
         use_normalized_coordinates=True,
         line_thickness=8,
-        min_score_thresh=0.80)
+        min_score_thresh=args["threshold"])
 
     # All the results have been drawn on the frame, so it's time to display it.
     cv2.imshow('Object detector', frame)

@@ -26,7 +26,8 @@ conda install -c conda-forge numba=0.38.1  opencv
 - modelsは2018/05/19時点のtensorflow object detection API(https://github.com/tensorflow/models/tree/master/research)
 
 - tf_api_train_base_files/00_sed_cp_base_files.batに出力ディレクトリとtrain画像ディレクトリのパスやkerasの画像分類モデルのパスなどを入れ、00から順番にbatファイルを実行すれば学習実行できる
-	- batファイルはサクラエディタで開くこと。batファイルの文字コードがUTF8でないとtf_api_train_base_files/00_sed_cp_base_files.batがエラーになる
+	- batファイルはサクラエディタで開くこと。文字コードがUTF8でないとtf_api_train_base_files/00_sed_cp_base_files.batがエラーになる
+	- 他のbatファイル実行時に文字化けする場合はSIFT-JISに変更すること（基本、バッチファイルの文字コードはSIFT-JISじゃなきゃだめ）
 
 ## Author
 - Github: [riron1206](https://github.com/riron1206)
