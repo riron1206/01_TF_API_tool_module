@@ -51,14 +51,19 @@ from utils import visualization_utils as vis_util
 
 import keras
 
+sys.path.append( r'C:\Users\shingo\jupyter_notebook\tfgpu_py36_work\02_keras_py' )
+from predicter import base_predict
+
 # 追加
-def predict_class_model(dst, model, img_height, img_width):
+def predict_class_model(dst, model, img_height, img_width, TTA=None, TTA_rotate_deg=0, TTA_crop_num=0, *args, **kwargs):
     """
     学習済み分類モデルで予測
     引数：
         dst:切り出したarray型の画像
         model:学習済み分類モデル
         img_height, img_width:モデルの入力画像サイズ（modelのデフォルトのサイズである必要あり）
+        TTA*:TTA option
+        *args, **kwargs:TTA用に引数任意に追加できるようにする。*argsはオプション名なしでタプル型で引数渡せる。**kwargsは辞書型で引数渡せる
     返り値：
         pred[pred_max_id]:確信度
         pred_max_id:予測ラベル
@@ -66,11 +71,18 @@ def predict_class_model(dst, model, img_height, img_width):
     # 画像のサイズ変更
     x = cv2.resize(dst,(img_height,img_width))
     # 4次元テンソルへ変換
-    x = np.expand_dims(x, axis=0)
+    X = np.expand_dims(x, axis=0)
     # 前処理
-    X = x/255.0
+    X = X/255.0
     # 予測1画像だけ（複数したい場合は[0]をとる）
-    pred = model.predict(X)[0]
+    if (TTA == "None") and (TTA_rotate_deg == 0) and (TTA_crop_num == 0):
+        pred = model.predict(X)[0]
+    else:
+        # TTA
+        pred = base_predict.predict_tta(model, x, TTA=TTA#'flip'
+                                        , TTA_rotate_deg=TTA_rotate_deg
+                                        , TTA_crop_num=TTA_crop_num, TTA_crop_size=[(img_height*3)//4, (img_width*3)//4]
+                                        , preprocess=1.0/255.0, resize_size=[img_height, img_width])
     #print(pred)
     # 予測確率最大のクラスidを取得
     pred_max_id = np.argmax(pred)#,axis=1)
@@ -91,7 +103,8 @@ def predict_image_tfapi(detection_graph, sess
                         , PATH_TO_CKPT, PATH_TO_LABELS, PATH_TO_IMAGE, NUM_CLASSES, output_dir
                         , tfapi_min_score_thresh=1e-5
                         , is_show=True, is_img_save=True
-                        , class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
+                        , class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331
+                        , TTA=None, TTA_rotate_deg=0, TTA_crop_num=0):
     """
     tfAPIでpredict
     kerasの分類モデル引数にあればそのモデルでもpredict
@@ -108,6 +121,7 @@ def predict_image_tfapi(detection_graph, sess
         dict_class: kerasの分類モデルのクラスのidとクラス名の辞書型データ
         class_min_score_thresh: kerasの分類モデルのpredictの閾値
         model_height, model_width: 予測するkerasの分類モデルの入力画像サイズ（modelのデフォルトのサイズである必要あり）
+        TTA*:TTA option
     """
     # Load the label map.
     label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -180,7 +194,7 @@ def predict_image_tfapi(detection_graph, sess
             #plt.imshow(dst / 255.)
             #plt.show()
             # 切り出し画像を分類モデルでpredict
-            class_conf, class_label_id = predict_class_model(dst, class_model, model_height, model_width)
+            class_conf, class_label_id = predict_class_model(dst, class_model, model_height, model_width, TTA=TTA, TTA_rotate_deg=TTA_rotate_deg, TTA_crop_num=TTA_crop_num)
             #print('class_label_name :', dict_class[class_label_id])
             #print('class_conf :', class_conf)
 
@@ -209,6 +223,9 @@ def predict_image_tfapi(detection_graph, sess
         print('scores.shape:', scores.shape)
         #print(scores)
     # ---------------------------------------------------------
+    else:
+        img_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        classes = classes.astype(np.int32) # intでないと vis_util.visualize_boxes_and_labels_on_image_array()でエラーになる
 
     # 検出数が1のときに検出画像をだすとエラーになるのでtryで囲む
     try:
@@ -225,6 +242,7 @@ def predict_image_tfapi(detection_graph, sess
                 vis_scores = np.squeeze(scores)
             #print(vis_boxes.shape)
             #print(vis_classes.shape)
+            #print(vis_classes)
             #print(vis_scores.shape)
             # Draw the results of the detection (aka 'visulaize the results')
             vis_util.visualize_boxes_and_labels_on_image_array(
@@ -265,7 +283,9 @@ def predict_dir_tfapi(detection_graph, sess,
                       tfapi_min_score_thresh=1e-5,
                       is_show=True, is_img_save=True,
                       is_overwrite=False,
-                      class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331):
+                      class_model=None, dict_class={0.0:"Car"}, class_min_score_thresh=0.5, model_height=331, model_width=331,
+                      TTA=None, TTA_rotate_deg=0, TTA_crop_num=0
+                      ):
     """
     指定ディレクトリの画像全件tfAPIでpredict
     kerasの分類モデル引数にあればそのモデルでもpredict
@@ -298,7 +318,8 @@ def predict_dir_tfapi(detection_graph, sess,
                                                                   , PATH_TO_CKPT, PATH_TO_LABELS, path, NUM_CLASSES, output_dir
                                                                   , tfapi_min_score_thresh=tfapi_min_score_thresh # tfAPIのpredictの閾値
                                                                   , is_show=is_show, is_img_save=is_img_save
-                                                                  , class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width)
+                                                                  , class_model=class_model, dict_class=dict_class, class_min_score_thresh=class_min_score_thresh, model_height=model_height, model_width=model_width
+                                                                  , TTA=TTA, TTA_rotate_deg=TTA_rotate_deg, TTA_crop_num=TTA_crop_num)
             ymin_list = []
             xmin_list = []
             ymax_list = []
@@ -412,12 +433,18 @@ def main():
         help="kerasの分類モデルの入力層の縦サイズ")
     ap.add_argument("-c_mw", "--model_width", type=int, default=32,
         help="kerasの分類モデルの入力層の横サイズ")
-    ap.add_argument("-dic_class", "--dict_class_tsv", type=str, required=True,
+    ap.add_argument("-dic_class", "--dict_class_tsv", type=str, default="None",
         help="kerasの分類モデルの[クラス名(str型:半角英数), クラスid(int型)]のtsvファイルのpath（headerあり）。例:D:\work\kaggle_kuzushiji-recognition\work\classes\20190816\class_id_master.tsv")
     ap.add_argument("-cust_ob", "--custom_objects", type=str, default="None",
         help="kerasの分類モデルの入力層の横サイズ")
+    ap.add_argument("--TTA_flip", type=str, default="None",
+        help="kerasの分類モデルのTTA flip")
+    ap.add_argument("--TTA_rotate_deg", type=int, default=0,
+        help="kerasの分類モデルのTTA rotate deg")
+    ap.add_argument("--TTA_crop_num", type=int, default=0,
+        help="kerasの分類モデルのTTA crop num")
     args = vars(ap.parse_args())
-
+    #print('is_img_save:', args["is_img_save"])
     print('custom_objects:', args["custom_objects"])
     # keras model load
     if args["class_model_path"] == "None":
@@ -434,10 +461,13 @@ def main():
         class_model = keras.models.load_model(args["class_model_path"], compile=False)
 
     # kerasの分類モデルのクラスidとクラス名のtsvファイルload
-    df_class = pd.read_csv(args["dict_class_tsv"], sep='\t')
-    dict_class = {}
-    for index, series in df_class.iterrows():
-        dict_class[series[1]] = series[0]
+    if args["dict_class_tsv"] == "None":
+        dict_class = {}
+    else:
+        df_class = pd.read_csv(args["dict_class_tsv"], sep='\t')
+        dict_class = {}
+        for index, series in df_class.iterrows():
+            dict_class[series[1]] = series[0]
     #print('dict_class:', dict_class)
 
     # Load the Tensorflow model into memory.
@@ -460,7 +490,9 @@ def main():
                                              , class_model=class_model
                                              , dict_class=dict_class
                                              , class_min_score_thresh=args["class_threshold"]
-                                             , model_height=args["model_height"], model_width=args["model_width"])
+                                             , model_height=args["model_height"], model_width=args["model_width"]
+                                             , TTA=args["TTA_flip"], TTA_rotate_deg=args["TTA_rotate_deg"], TTA_crop_num=args["TTA_crop_num"]
+                                             )
 
     # kaggleのくずし字コンペ用 予測したx,yの位置情報をx1,x2,y1,y2の中心位置にしたデータフレーム出力
     out_pred_df_mid_posi(df_output_dict_merge, args["output"])
