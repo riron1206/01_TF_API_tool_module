@@ -15,9 +15,8 @@ conda create -n tfgpu_v1-11
 activate tfgpu_v1-11
 conda install -c anaconda tensorflow-gpu=1.11
 conda install -c conda-forge keras=2.2.4
-conda install -c conda-forge pandas scikit-learn jupyter
 conda install -c conda-forge pandas scikit-learn jupyter Cython Protobuf Pillow lxml Matplotlib tqdm future graphviz pydot pytest pyperclip networkx selenium beautifulsoup4 cssselect openpyxl pypdf2 python-docx requests tweepy textblob seaborn scikit-image imbalanced-learn colorlog sqlalchemy papermill opencv shapely imageio git shap eli5 umap-learn plotly ipysheet bqplot rise bokeh jupyter_contrib_nbextensions yapf flask cx_oracle rdkit tifffile xlsxwriter
-conda install -c conda-forge numba=0.38.1  opencv
+conda install -c conda-forge numba=0.38.1 opencv
 ```
 
 ## Usage
